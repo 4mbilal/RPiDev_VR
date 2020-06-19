@@ -1,0 +1,3 @@
+/home/pi/RPiDev_VR/src/CMakeFiles/rebuild_cache.dir
+/home/pi/RPiDev_VR/src/CMakeFiles/edit_cache.dir
+/home/pi/RPiDev_VR/src/CMakeFiles/RPi_VR.dir
