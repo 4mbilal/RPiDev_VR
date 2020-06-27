@@ -3,4 +3,4 @@ Streams stereo video to Android-based VR goggles and receives headtracking signa
 
 ## *Acknowledgements*:  
 
-1- MJPEG streamer code in its entirety belongs to JPery (github/JPery/MJPEGWriter)  
+1- MJPEG streamer code in its entirety belongs to JPery (github/JPery/MJPEGWriter). Minor changes in code have been made to wait for the next frame to be captured by the camera before streaming. The original code encodes/streams the old frame if newer version is not available. This leads to a false higher fps at the receiving side.    
