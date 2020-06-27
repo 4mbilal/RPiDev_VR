@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/RPi_VR.dir/DIP.cpp.o"
   "CMakeFiles/RPi_VR.dir/MJPEGWriter.cpp.o"
   "CMakeFiles/RPi_VR.dir/main.cpp.o"
   "RPi_VR"

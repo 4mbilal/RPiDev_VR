@@ -4,6 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
+  "/home/pi/RPiDev_VR/src/DIP.cpp" "/home/pi/RPiDev_VR/src/CMakeFiles/RPi_VR.dir/DIP.cpp.o"
   "/home/pi/RPiDev_VR/src/MJPEGWriter.cpp" "/home/pi/RPiDev_VR/src/CMakeFiles/RPi_VR.dir/MJPEGWriter.cpp.o"
   "/home/pi/RPiDev_VR/src/main.cpp" "/home/pi/RPiDev_VR/src/CMakeFiles/RPi_VR.dir/main.cpp.o"
   )

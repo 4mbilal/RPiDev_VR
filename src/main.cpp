@@ -1,11 +1,15 @@
 #include "MJPEGWriter.h"
+#include "DIP.h"
 
+void test_cameras();
 void *ypr_thread(void *threadID);
+Mat side_by_side_3d_frame(Mat left, Mat right);
 
 
 int
 main()
 {
+//    test_cameras();
     pthread_t threads[1];
     int rc = pthread_create(&threads[0],NULL,ypr_thread,(void *)0);
     cout<<"Main"<<endl;
@@ -15,25 +19,39 @@ main()
     }
     MJPEGWriter test(8080);
 
-    VideoCapture cap;
-    bool ok = cap.open("//home//pi//RemoteVisitorBase//mjpeg//media//SanFran.mkv");
-    //bool ok = cap.open("//home//pi//RemoteVisitorBase//mjpeg//media//ZED.mkv");
-    //bool ok = cap.open(0);
-    cap.set(cv::CAP_PROP_BUFFERSIZE,1);
-    if (!ok)
+    VideoCapture cap_left,cap_right;
+    bool ok1 = cap_left.open(2);
+    bool ok2 = cap_right.open(0);
+//    cap.set(cv::CAP_PROP_BUFFERSIZE,1);
+    if (!ok1)
     {
-        printf("no cam found ;(.\n");
-        pthread_exit(NULL);
+        printf("left cam not found ;(.\n");
     }
+    if (!ok2)
+    {
+        printf("right cam not found ;(.\n");
+    }
+    Mat frame_left, frame_right, out;
+
+    VideoCapture cap_vid;
+    bool ok3 = cap_vid.open("//home//pi//Videos//KSA_history_01.mp4");
     Mat frame;
-    cap >> frame;
+    Mat frame_vid;
+    cap_left >> frame;
+    resize(frame,frame,Size(1280,720));
     test.write(frame);
     frame.release();
     test.start();
-    while(cap.isOpened()){
-        cap >> frame; 
-        //resize(frame,frame,cv::Size(),0.5,0.5);
-        //hconcat(frame,frame,frame);
+    cap_vid >> frame_vid;
+    while(cap_left.isOpened()&&cap_right.isOpened()){
+        cap_left >> frame_left; 
+        cap_right >> frame_right; 
+        frame = side_by_side_3d_frame(frame_left, frame_right);
+//cout<<frame.rows<<", "<<frame.cols<<endl;
+        cap_vid >> frame_vid;
+        frame(Rect(0,0,frame.cols/2,frame.rows)).copyTo(frame_left);
+        frame(Rect(frame.cols/2,0,frame.cols/2,frame.rows)).copyTo(frame_right);
+        frame = process_frame(frame_left,frame_right,frame_vid);
         test.write(frame);
         namedWindow( "image", 1 );
         imshow( "image", frame );
@@ -79,7 +97,7 @@ int getData( int sockfd ) {
   memcpy(&yaw,&b1,sizeof(yaw));
   memcpy(&pitch,&b2,sizeof(pitch));
   memcpy(&roll,&b3,sizeof(roll));
-  printf( "ypr = %.2ff\t%.2ff\t%.2ff\n", yaw,pitch,roll );
+  printf( "ypr = %.2f\t\t%.2f\t\t%.2f\n", yaw,pitch,roll );
   return 0;
 }
 
@@ -142,4 +160,61 @@ void *ypr_thread(void *threadID){
         cout<<"hello in thread :"<<tid<<endl;
     }
     pthread_exit(NULL);
+}
+
+ 
+Mat side_by_side_3d_frame(Mat left, Mat right){
+    Mat out;
+    float left_scale_correction = 1.15*1.5;
+    resize(left,left,Size(0,0),left_scale_correction,left_scale_correction);
+    resize(right,right,Size(0,0),1.5,1.5);
+    
+    int r_left = (left.rows/2)-360;
+    int c_left = (left.cols/2)-320;
+    int r_right = (right.rows/2)-360;
+    int c_right = (right.cols/2)-320;
+
+    int c_left_offset = 180;
+    int r_left_offset = 0;
+    int c_right_offset = -160;
+    int r_right_offset = 0;
+    int win_width = 640;
+    int win_height = 720;
+
+hconcat(left(Rect(c_left+c_left_offset,r_left+r_left_offset,win_width,win_height)),right(Rect(c_right+c_right_offset,r_right+r_right_offset,win_width,win_height)),out);
+//    hconcat(left,right,out);
+//    cout<<out.rows<<", "<<out.cols<<endl;
+	return out;
+}
+
+
+void test_cameras(){
+    Mat frame_left,frame_right;
+    VideoCapture cap1,cap2;
+    bool ok1 = cap1.open(0);
+    bool ok2 = cap2.open(2);
+    if (!ok1)
+    {
+        printf("Cam not found ;(.\n");
+        exit(0);
+    }
+    if (!ok2)
+    {
+        printf("Cam not found ;(.\n");
+        exit(0);
+    }
+    
+    Mat frame;
+    namedWindow( "Live Video", 1 );
+    cap1 >> frame_left; 
+    cap2 >> frame_right; 
+    
+    while(cap1.isOpened()&&cap2.isOpened()){
+        cap1 >> frame_left; 
+        cap2 >> frame_right; 
+        hconcat(frame_left,frame_right,frame);
+        imshow( "Live Video", frame );
+        waitKey(1); 
+        frame.release();
+        }
 }

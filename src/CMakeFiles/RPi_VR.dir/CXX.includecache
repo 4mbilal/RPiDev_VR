@@ -6,10 +6,40 @@
 
 #IncludeRegexTransform: 
 
-/home/pi/RPiDev_VR/src/MJPEGWriter.cpp
-MJPEGWriter.h
-/home/pi/RPiDev_VR/src/MJPEGWriter.h
-fstream
+/home/pi/RPiDev_VR/src/DIP.h
+unistd.h
+-
+sys/time.h
+-
+sys/types.h
+-
+sys/socket.h
+-
+sys/signal.h
+-
+netdb.h
+-
+netinet/in.h
+-
+arpa/inet.h
+-
+pthread.h
+-
+iostream
+-
+stdio.h
+-
+string.h
+-
+opencv2/opencv.hpp
+/home/pi/RPiDev_VR/src/opencv2/opencv.hpp
+stdio.h
+-
+string.h
+-
+stdlib.h
+-
+errno.h
 -
 
 /home/pi/RPiDev_VR/src/MJPEGWriter.h
@@ -51,6 +81,8 @@ errno.h
 /home/pi/RPiDev_VR/src/main.cpp
 MJPEGWriter.h
 /home/pi/RPiDev_VR/src/MJPEGWriter.h
+DIP.h
+/home/pi/RPiDev_VR/src/DIP.h
 
 /usr/local/include/opencv4/opencv2/calib3d.hpp
 opencv2/core.hpp

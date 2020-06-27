@@ -79,6 +79,7 @@ class MJPEGWriter{
     pthread_mutex_t mutex_cout = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t mutex_writer = PTHREAD_MUTEX_INITIALIZER;
     Mat lastFrame;
+    bool frame_updated = false;
     int port;
 
     int _write(int sock, char *s, int len)
@@ -137,7 +138,7 @@ public:
     MJPEGWriter(int port = 0)
         : sock(INVALID_SOCKET)
         , timeout(TIMEOUT_M)
-        , quality(90)
+        , quality(50)
 	, port(port)
     {
         signal(SIGPIPE, SIG_IGN);
@@ -203,6 +204,7 @@ public:
     	if(!frame.empty()){
     		lastFrame.release();
     		lastFrame = frame.clone();
+            frame_updated = true;
     	}
     	pthread_mutex_unlock(&mutex_writer);
     }

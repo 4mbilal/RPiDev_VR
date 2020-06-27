@@ -143,6 +143,33 @@ RPi_VR/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/RPi_VR.dir/build.make CMakeFiles/RPi_VR.dir/build
 .PHONY : RPi_VR/fast
 
+DIP.o: DIP.cpp.o
+
+.PHONY : DIP.o
+
+# target to build an object file
+DIP.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RPi_VR.dir/build.make CMakeFiles/RPi_VR.dir/DIP.cpp.o
+.PHONY : DIP.cpp.o
+
+DIP.i: DIP.cpp.i
+
+.PHONY : DIP.i
+
+# target to preprocess a source file
+DIP.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RPi_VR.dir/build.make CMakeFiles/RPi_VR.dir/DIP.cpp.i
+.PHONY : DIP.cpp.i
+
+DIP.s: DIP.cpp.s
+
+.PHONY : DIP.s
+
+# target to generate assembly for a file
+DIP.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RPi_VR.dir/build.make CMakeFiles/RPi_VR.dir/DIP.cpp.s
+.PHONY : DIP.cpp.s
+
 MJPEGWriter.o: MJPEGWriter.cpp.o
 
 .PHONY : MJPEGWriter.o
@@ -206,6 +233,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... RPi_VR"
+	@echo "... DIP.o"
+	@echo "... DIP.i"
+	@echo "... DIP.s"
 	@echo "... MJPEGWriter.o"
 	@echo "... MJPEGWriter.i"
 	@echo "... MJPEGWriter.s"
