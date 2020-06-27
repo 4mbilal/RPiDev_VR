@@ -42,6 +42,12 @@ stdlib.h
 errno.h
 -
 
+/home/pi/RPiDev_VR/src/MJPEGWriter.cpp
+MJPEGWriter.h
+/home/pi/RPiDev_VR/src/MJPEGWriter.h
+fstream
+-
+
 /home/pi/RPiDev_VR/src/MJPEGWriter.h
 unistd.h
 -

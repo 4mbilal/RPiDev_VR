@@ -62,7 +62,7 @@ MJPEGWriter::Writer()
 {
     pthread_mutex_lock(&mutex_writer);
     pthread_mutex_unlock(&mutex_writer);
-    const int milis2wait = 16666;
+    const int milis2wait = 100000;//16666;
     while (this->isOpened())
     {
         pthread_mutex_lock(&mutex_client);
@@ -79,8 +79,11 @@ MJPEGWriter::Writer()
         std::vector<int> params;
         params.push_back(cv::IMWRITE_JPEG_QUALITY);
         params.push_back(quality);
+        
+        //Wait for the fresh frame to be captured
         while(!frame_updated);
         frame_updated = false;
+        
         pthread_mutex_lock(&mutex_writer);
         imencode(".jpg", lastFrame, outbuf, params);
         pthread_mutex_unlock(&mutex_writer);
