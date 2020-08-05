@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-project( RPi_VR )
-find_package( OpenCV REQUIRED )
-find_package( Threads REQUIRED )
-add_executable( RPi_VR MJPEGWriter.cpp main.cpp DIP.cpp)
-target_link_libraries( RPi_VR ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})

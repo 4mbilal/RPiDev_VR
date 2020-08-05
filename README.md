@@ -1,5 +1,7 @@
 # RPiDev_VR
-Streams stereo video to Android-based VR goggles and receives headtracking signals to actuate the servos  
+1- Streams stereo video to Android-based VR goggles and receives headtracking signals to actuate the servos.  
+2- Detects custom objects using Squeezenet-SVM detector. See Matlab script.  
+3- Tested on both Raspbery Pi and Jetson Nano. Raspberry struggles while Jetson comfortably works at >10fps.  
 
 ## *Acknowledgements*:  
 
