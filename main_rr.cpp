@@ -35,6 +35,7 @@ using namespace cv;
 void Remote_Reality();
 int test_AI_detector();
 int test_MJPEG_Streamer();
+void test_single_camera();
 void Mat2Buffer(unsigned char* inputBuffer, Mat inImage);
 void Buffer2Mat(unsigned char* outputBuffer, Mat outImage);
 void AI_detector();
@@ -55,6 +56,7 @@ int main(){
 	Remote_Reality();
 	//test_AI_detector();
 	//test_MJPEG_Streamer();
+	//test_single_camera();
 }
 
 void Remote_Reality(){
@@ -114,15 +116,20 @@ void AI_detector(){
         	
     printf("\n\tAI  Detector started");
     VideoCapture cap;
-    if (!cap.open("/home/brainiac/Videos/test_cnn_svm.mp4")){
+    if (!cap.open("/home/brainiac/Videos/vid0_stereo.mp4.avi")){
     //if (!cap.open(0)){
         printf("\n\tCamera could not be opened");
         return;
     }
-   cap >> Stream_frames[0]; 
-   cap >> Stream_frames[1]; 
-   cap >> Stream_frames[2]; 
-   cap >> Stream_frames[3]; 
+    cap.set(cv::CAP_PROP_FRAME_WIDTH,1280);
+		cap.set(cv::CAP_PROP_FRAME_HEIGHT,480);
+   
+   for(int x=0;x<10;x++){ //let the camera stabilize
+	   cap >> Stream_frames[0]; 
+	   cap >> Stream_frames[1]; 
+	   cap >> Stream_frames[2]; 
+	   cap >> Stream_frames[3]; 
+ }
    Stream_frames_indx = 0;
     
    unsigned char* ipBuffer = (unsigned char*)calloc(sizeof(unsigned char), Stream_frames[0].rows*Stream_frames[0].cols*3);
@@ -134,7 +141,10 @@ void AI_detector(){
     //2- CNN inference
         ftime(&t_start);
         Mat fr_cnn;
-        resize(Stream_frames[(Stream_frames_indx+1)%4],fr_cnn,Size(640,480));
+        //resize(Stream_frames[(Stream_frames_indx+1)%4],fr_cnn,Size(640,480));
+        Stream_frames[(Stream_frames_indx+1)%4](Rect(0,0,640,480)).copyTo(fr_cnn);
+        //imshow("AI Frame",fr_cnn);
+        //waitKey(1);
         Mat2Buffer(ipBuffer, fr_cnn);
         res = squeezenet_svm_predict(ipBuffer);
         Stream_frame_status = true;
@@ -381,6 +391,26 @@ void error( char *msg ) {
   exit(1);
 }
 
+
+void test_single_camera(){
+    Mat frame;
+    VideoCapture cap;
+    bool ok = cap.open(0);
+    if (!ok)
+    {
+        printf("Camera could not be opened....");
+        exit(0);
+    }
+
+    namedWindow( "Live Video", 1 );
+   
+    while(cap.isOpened()){
+        cap >> frame; 
+        imshow( "Live Video", frame );
+        waitKey(1); 
+    }
+}
+
 /*
 
 
@@ -412,7 +442,7 @@ hconcat(left(Rect(c_left+c_left_offset,r_left+r_left_offset,win_width,win_height
 }
 
 
-void test_cameras(){
+void test_dual_cameras(){
     Mat frame_left,frame_right;
     VideoCapture cap1,cap2;
     bool ok1 = cap1.open(0);

@@ -12,7 +12,7 @@ device = 0;     %Change to opencv4 in squeezenet_svm_predict
 
 if(device ==0)
     hwobj = jetson('192.168.1.38','brainiac','123');
-    hwobj.getCameraList
+%     hwobj.getCameraList
     cfg = coder.gpuConfig('exe');
 %     cfg = coder.gpuConfig('lib');
     % cfg.TargetLang = 'C++';
