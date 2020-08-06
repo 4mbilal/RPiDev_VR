@@ -41,11 +41,12 @@ void Buffer2Mat(unsigned char* outputBuffer, Mat outImage);
 void AI_detector();
 void MJPEG_Streamer();
 void process_frame();
+void HeadTracking();
 bool streamerStarted;
-void *ypr_thread(void *threadID);
 int socket_ex();
 int getData(int sockfd);
 void error(char *msg);
+void cleanup();
 
 Mat Stream_frames[4];
 int Stream_frames_indx;
@@ -53,6 +54,7 @@ bool Stream_frame_status;
 int obj_id;
 float fps;
 VideoCapture pip_vid;
+int sockfd, newsockfd;
 
 
 int main(){
@@ -77,7 +79,8 @@ void Remote_Reality(){
         cout<<".";
         usleep(500000);
     }
-    	
+    
+    thread HTthread (HeadTracking);
     printf("\nMain Thread");
    
    MJPEGWriter vid_streamer(8080);
@@ -97,7 +100,11 @@ void Remote_Reality(){
             vid_streamer.write(Stream_frames[Stream_frames_indx]);
             namedWindow( "Stream Frame", 1 );
             imshow( "Stream Frame", Stream_frames[Stream_frames_indx] );
-            waitKey(1);
+            int key = waitKey(1);
+            if(key==27){
+            	vid_streamer.release();
+            	cleanup();
+            }
             //Stream_frames[Stream_frames_indx].release();
         }
         else{
@@ -120,52 +127,54 @@ void process_frame(){
 	switch(obj_id){
   	case 1: sprintf(img_str,"Robbie %0.1f",fps);
   					break;
-  	case 2: sprintf(img_str,"Elephant Mountain %0.1f",fps);
+  	case 2: sprintf(img_str,"Elephant Mountain (Al-Ula)");
   					if(!pip_vid.isOpened())
   						pip_vid.open("/home/brainiac/Videos/AlUla.mkv");
   					break;
-  	case 3: sprintf(img_str,"Jeddah Floating Mosque %0.1f",fps);
+  	case 3: sprintf(img_str,"Floating Mosque (Jeddah)");
   					if(!pip_vid.isOpened())
   						pip_vid.open("/home/brainiac/Videos/Jeddah.mkv");
   					break;
-  	case 4: sprintf(img_str,"AlAhsa Script %0.1f",fps);
+  	case 4: sprintf(img_str,"Ancient AlAhsa Script (Thaj)");
   					if(!pip_vid.isOpened())
   						pip_vid.open("/home/brainiac/Videos/NationalMuseum.mp4");
   					break;
-  	case 5: sprintf(img_str,"Qasar Al-Farid (Al-Ula) %0.1f",fps);
+  	case 5: sprintf(img_str,"Qasar Al-Farid (Al-Ula)");
   					if(!pip_vid.isOpened())
   						pip_vid.open("/home/brainiac/Videos/AlUla.mkv");
   					break;
-  	case 6: sprintf(img_str,"Riyadh Kingdom Tower %0.1f",fps);
+  	case 6: sprintf(img_str,"Kingdom Tower (Riyadh)");
   					if(!pip_vid.isOpened())
   						pip_vid.open("/home/brainiac/Videos/Riyadh.mkv");
   					break;
-  	case 7: cout<<"";
+  	case 7: sprintf(img_str,"%0.1f",fps);
   					break;        		
   }
   obj_id_prev = obj_id;
-  putText(Stream_frames[Stream_frames_indx],img_str,Point(20,20),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
-  	Mat pip;
-  	if(pip_vid.isOpened()){
-  		pip_vid>>pip;
-  		pip.copyTo(Stream_frames[Stream_frames_indx](Rect(0,0,pip.cols,pip.rows)));
-    }    
+  int disp = 50;
+  putText(Stream_frames[Stream_frames_indx],img_str,Point(20+disp,100),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
+  putText(Stream_frames[Stream_frames_indx],img_str,Point(20+640,100),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
+
+	Mat pip;
+	if(pip_vid.isOpened()){
+		pip_vid>>pip;
+		if(!pip.empty()){
+			//pip.copyTo(Stream_frames[Stream_frames_indx](Rect(0,0,pip.cols,pip.rows)));
+			resize(pip,pip,Size(267,200));
+			addWeighted(Stream_frames[Stream_frames_indx](Rect(320+disp,240,pip.cols,pip.rows)),0.5,pip,0.5,0.0,Stream_frames[Stream_frames_indx](Rect(320+disp,240,pip.cols,pip.rows)));
+			addWeighted(Stream_frames[Stream_frames_indx](Rect(320+640,240,pip.cols,pip.rows)),0.5,pip,0.5,0.0,Stream_frames[Stream_frames_indx](Rect(320+640,240,pip.cols,pip.rows)));
+			rectangle(Stream_frames[Stream_frames_indx], Point(320+disp,240), Point(320+disp+pip.cols,240+pip.rows), CV_RGB(64, 0, 64), 2, 8, 0);
+			rectangle(Stream_frames[Stream_frames_indx], Point(320+640,240), Point(320+640+pip.cols,240+pip.rows), CV_RGB(64, 0, 64), 2, 8, 0);
+		}
+		else
+			pip_vid.release();
+  }    
   		
- /*       static Mat img;
+/*       static Mat img;
         if(img.empty()){
                 img = imread("//home//pi//Pictures//KAU_logo.jpg");
         }
-        Mat pip;
-        int disp = 50;
-        resize(vid_frame,pip,cv::Size(),0.95,0.95);
-        addWeighted(frame_left(Rect(300+disp,420,pip.cols,pip.rows)),0.25,pip,0.75,0.0,frame_left(Rect(300+disp,420,pip.cols,pip.rows)));
-        addWeighted(frame_right(Rect(300,420,pip.cols,pip.rows)),0.25,pip,0.75,0.0,frame_right(Rect(300,420,pip.cols,pip.rows)));
-        Mat res;
-        //cvtColor(frame_right,frame_right,cv::COLOR_BGR2YUV);
-        putText(frame_left,"Sample Text", Point(50+disp,360), FONT_HERSHEY_COMPLEX_SMALL, 3, Scalar(200,200,250),1, 8);
-        putText(frame_right,"Sample Text", Point(50,360), FONT_HERSHEY_COMPLEX_SMALL, 3, Scalar(200,200,250),1, 8);
-        hconcat(frame_left,frame_right,res);
-        return res;*/
+*/
 }
 
 void AI_detector(){
@@ -201,6 +210,10 @@ void AI_detector(){
    	//1- Capture Frame
         Stream_frames_indx = (Stream_frames_indx+1)%4;
         cap >> Stream_frames[(Stream_frames_indx+1)%4]; 
+        if (Stream_frames[(Stream_frames_indx+1)%4].empty()){
+        	while(1);
+        }
+
     //2- CNN inference
         ftime(&t_start);
         Mat fr_cnn;
@@ -253,6 +266,11 @@ void Buffer2Mat(unsigned char* outputBuffer, Mat outImage) {
         outImage.data[j * 3 + 1] = outputBuffer[j];
         outImage.data[j * 3 + 2] = outputBuffer[j];
     }
+}
+
+void cleanup(){
+	close(newsockfd);
+	exit(0);
 }
 
 int test_AI_detector() {
@@ -310,13 +328,13 @@ int test_AI_detector() {
 
 int test_MJPEG_Streamer(){
 //    test_cameras();
-    pthread_t threads[1];
+    /*pthread_t threads[1];
     int rc = pthread_create(&threads[0],NULL,ypr_thread,(void *)0);
     cout<<"Main Thread"<<endl;
     if(rc){
         cout<<"Problem in creating thread";
         exit(-1);
-    }
+    }*/
     MJPEGWriter test(8080);
 
     VideoCapture cap;
@@ -345,24 +363,13 @@ int test_MJPEG_Streamer(){
     exit(0);
 }
 
-void *ypr_thread(void *threadID){
-    long tid = (long)threadID;
-    cout<<"Thread started";
-    socket_ex();
-    while(1){
-        cout<<"hello in thread :"<<tid<<endl;
-    }
-    pthread_exit(NULL);
-}
-
-int socket_ex() {
-     int sockfd, newsockfd, portno = 5000, clilen;
+void HeadTracking() {
+     int portno = 5000, clilen;
      char buffer[256];
      struct sockaddr_in serv_addr, cli_addr;
      int n;
      int data;
-
-     printf( "using port #%d\n", portno );
+    printf("\n\tHead tracking started at port: #%d\n", portno );
     
      sockfd = socket(AF_INET, SOCK_STREAM, 0);
      if (sockfd < 0) 
@@ -396,14 +403,13 @@ int socket_ex() {
              //--- send new data back --- 
 	    // printf( "sending back %d\n", data );
             // sendData( newsockfd, data );
-	}
+				}			
         close( newsockfd );
 
         //--- if -2 sent by client, we can quit ---
         if ( data == -2 )
           break;
      }
-     return 0; 
 }
 
 
@@ -459,36 +465,6 @@ void test_single_camera(){
     }
 }
 
-/*
-
-
-
-
- 
-Mat side_by_side_3d_frame(Mat left, Mat right){
-    Mat out;
-    float left_scale_correction = 1.15*1.5;
-    resize(left,left,Size(0,0),left_scale_correction,left_scale_correction);
-    resize(right,right,Size(0,0),1.5,1.5);
-    
-    int r_left = (left.rows/2)-360;
-    int c_left = (left.cols/2)-320;
-    int r_right = (right.rows/2)-360;
-    int c_right = (right.cols/2)-320;
-
-    int c_left_offset = 180;
-    int r_left_offset = 0;
-    int c_right_offset = -160;
-    int r_right_offset = 0;
-    int win_width = 640;
-    int win_height = 720;
-
-hconcat(left(Rect(c_left+c_left_offset,r_left+r_left_offset,win_width,win_height)),right(Rect(c_right+c_right_offset,r_right+r_right_offset,win_width,win_height)),out);
-//    hconcat(left,right,out);
-//    cout<<out.rows<<", "<<out.cols<<endl;
-	return out;
-}
-
 
 void test_dual_cameras(){
     Mat frame_left,frame_right;
@@ -521,5 +497,3 @@ void test_dual_cameras(){
         }
 }
 
-
-*/
