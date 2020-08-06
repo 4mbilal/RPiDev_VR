@@ -40,17 +40,20 @@ void Mat2Buffer(unsigned char* inputBuffer, Mat inImage);
 void Buffer2Mat(unsigned char* outputBuffer, Mat outImage);
 void AI_detector();
 void MJPEG_Streamer();
+void process_frame();
 bool streamerStarted;
 void *ypr_thread(void *threadID);
 int socket_ex();
 int getData(int sockfd);
 void error(char *msg);
 
-Mat AI_frame,Stream_frames[4];
+Mat Stream_frames[4];
 int Stream_frames_indx;
-bool AI_frame_status,Stream_frame_status;
-mutex AI_mtx;
-mutex Stream_mtx;
+bool Stream_frame_status;
+int obj_id;
+float fps;
+VideoCapture pip_vid;
+
 
 int main(){
 	Remote_Reality();
@@ -62,9 +65,10 @@ int main(){
 void Remote_Reality(){
 	timeb t_start, t_end;
 	ftime(&t_start);
-	float fps = 5;
+	fps = 5;
 	float msec;
 	char img_str[50];
+	obj_id = 7;
     cout<<endl<<"Starting Remote Reality Application ....";
     Stream_frames_indx = -1;
     Stream_frame_status = false;
@@ -86,9 +90,10 @@ void Remote_Reality(){
 				}while(msec<100);//Don't go faster than 10 fps
         fps = 0.99*fps + 0.01*(1000/msec);
         ftime(&t_start);
-        sprintf(img_str,", %0.1f",fps);
-        putText(Stream_frames[Stream_frames_indx],img_str,Point(20,20),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
+        //sprintf(img_str,", %0.1f",fps);
+        //putText(Stream_frames[Stream_frames_indx],img_str,Point(20,20),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
         if(streamerStarted){
+        		process_frame();
             vid_streamer.write(Stream_frames[Stream_frames_indx]);
             namedWindow( "Stream Frame", 1 );
             imshow( "Stream Frame", Stream_frames[Stream_frames_indx] );
@@ -104,6 +109,64 @@ void Remote_Reality(){
    }
 }
  
+void process_frame(){
+	char img_str[50];
+	static int obj_id_prev;
+	if(obj_id_prev!=obj_id){
+		if(pip_vid.isOpened())
+			pip_vid.release();
+	}
+		
+	switch(obj_id){
+  	case 1: sprintf(img_str,"Robbie %0.1f",fps);
+  					break;
+  	case 2: sprintf(img_str,"Elephant Mountain %0.1f",fps);
+  					if(!pip_vid.isOpened())
+  						pip_vid.open("/home/brainiac/Videos/AlUla.mkv");
+  					break;
+  	case 3: sprintf(img_str,"Jeddah Floating Mosque %0.1f",fps);
+  					if(!pip_vid.isOpened())
+  						pip_vid.open("/home/brainiac/Videos/Jeddah.mkv");
+  					break;
+  	case 4: sprintf(img_str,"AlAhsa Script %0.1f",fps);
+  					if(!pip_vid.isOpened())
+  						pip_vid.open("/home/brainiac/Videos/NationalMuseum.mp4");
+  					break;
+  	case 5: sprintf(img_str,"Qasar Al-Farid (Al-Ula) %0.1f",fps);
+  					if(!pip_vid.isOpened())
+  						pip_vid.open("/home/brainiac/Videos/AlUla.mkv");
+  					break;
+  	case 6: sprintf(img_str,"Riyadh Kingdom Tower %0.1f",fps);
+  					if(!pip_vid.isOpened())
+  						pip_vid.open("/home/brainiac/Videos/Riyadh.mkv");
+  					break;
+  	case 7: cout<<"";
+  					break;        		
+  }
+  obj_id_prev = obj_id;
+  putText(Stream_frames[Stream_frames_indx],img_str,Point(20,20),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
+  	Mat pip;
+  	if(pip_vid.isOpened()){
+  		pip_vid>>pip;
+  		pip.copyTo(Stream_frames[Stream_frames_indx](Rect(0,0,pip.cols,pip.rows)));
+    }    
+  		
+ /*       static Mat img;
+        if(img.empty()){
+                img = imread("//home//pi//Pictures//KAU_logo.jpg");
+        }
+        Mat pip;
+        int disp = 50;
+        resize(vid_frame,pip,cv::Size(),0.95,0.95);
+        addWeighted(frame_left(Rect(300+disp,420,pip.cols,pip.rows)),0.25,pip,0.75,0.0,frame_left(Rect(300+disp,420,pip.cols,pip.rows)));
+        addWeighted(frame_right(Rect(300,420,pip.cols,pip.rows)),0.25,pip,0.75,0.0,frame_right(Rect(300,420,pip.cols,pip.rows)));
+        Mat res;
+        //cvtColor(frame_right,frame_right,cv::COLOR_BGR2YUV);
+        putText(frame_left,"Sample Text", Point(50+disp,360), FONT_HERSHEY_COMPLEX_SMALL, 3, Scalar(200,200,250),1, 8);
+        putText(frame_right,"Sample Text", Point(50,360), FONT_HERSHEY_COMPLEX_SMALL, 3, Scalar(200,200,250),1, 8);
+        hconcat(frame_left,frame_right,res);
+        return res;*/
+}
 
 void AI_detector(){
 	timeb t_start, t_end;
@@ -165,27 +228,12 @@ void AI_detector(){
                 res = i + 1;
             }
         }
-		//4- Report score and timing                
-   			ftime(&t_end);
+		//4- Report score and timing
+				obj_id = res;                
+   			/*ftime(&t_end);
 				msec = (float)((t_end.time - t_start.time) * 1000 + (t_end.millitm - t_start.millitm));
 				fps = 0.99*fps + 0.01*(1000/msec);
-				switch(res){
-        	case 1: cout<<"Robbie";
-        					break;
-        	case 2: cout<<"Elephant Mountain";
-        					break;
-        	case 3: cout<<"Jeddah Floating Mosque";
-        					break;
-        	case 4: cout<<"AlAhsa Script";
-        					break;
-        	case 5: cout<<"Qasar Al-Farid (Al-Ula)";
-        					break;
-        	case 6: cout<<"Riyadh Kingdom Tower";
-        					break;
-        	case 7: cout<<"";
-        					break;        		
-        }
-        cout<<", "<<fps<<endl;
+        cout<<res<<", "<<fps<<endl;*/
     }
 }
 
@@ -473,21 +521,5 @@ void test_dual_cameras(){
         }
 }
 
-Mat process_frame(Mat frame_left,Mat frame_right,Mat vid_frame){
-        static Mat img;
-        if(img.empty()){
-                img = imread("//home//pi//Pictures//KAU_logo.jpg");
-        }
-        Mat pip;
-        int disp = 50;
-        resize(vid_frame,pip,cv::Size(),0.95,0.95);
-        addWeighted(frame_left(Rect(300+disp,420,pip.cols,pip.rows)),0.25,pip,0.75,0.0,frame_left(Rect(300+disp,420,pip.cols,pip.rows)));
-        addWeighted(frame_right(Rect(300,420,pip.cols,pip.rows)),0.25,pip,0.75,0.0,frame_right(Rect(300,420,pip.cols,pip.rows)));
-        Mat res;
-        //cvtColor(frame_right,frame_right,cv::COLOR_BGR2YUV);
-        putText(frame_left,"Sample Text", Point(50+disp,360), FONT_HERSHEY_COMPLEX_SMALL, 3, Scalar(200,200,250),1, 8);
-        putText(frame_right,"Sample Text", Point(50,360), FONT_HERSHEY_COMPLEX_SMALL, 3, Scalar(200,200,250),1, 8);
-        hconcat(frame_left,frame_right,res);
-        return res;
-}
+
 */
