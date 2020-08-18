@@ -18,6 +18,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>      // File control definitions
+#include <termios.h>    // POSIX terminal control definitions
 
 #include "opencv2/opencv.hpp"
 #include "squeezenet_svm_predict.h"
@@ -36,6 +38,8 @@ void Remote_Reality();
 int test_AI_detector();
 int test_MJPEG_Streamer();
 void test_single_camera();
+void test_uart();
+void USB_uart_setup();
 void Mat2Buffer(unsigned char* inputBuffer, Mat inImage);
 void Buffer2Mat(unsigned char* outputBuffer, Mat outImage);
 void AI_detector();
@@ -55,10 +59,13 @@ int obj_id;
 float fps;
 VideoCapture pip_vid;
 int sockfd, newsockfd;
+int USB_uart;
+unsigned char ypr_cmd[6];
 
 
 int main(){
 	Remote_Reality();
+	//test_uart();
 	//test_AI_detector();
 	//test_MJPEG_Streamer();
 	//test_single_camera();
@@ -188,8 +195,8 @@ void AI_detector(){
         	
     printf("\n\tAI  Detector started");
     VideoCapture cap;
-    if (!cap.open("/home/brainiac/Videos/vid0_stereo.mp4.avi")){
-    //if (!cap.open(0)){
+    //if (!cap.open("/home/brainiac/Videos/vid0_stereo.mp4.avi")){
+    if (!cap.open(0)){
         printf("\n\tCamera could not be opened");
         return;
     }
@@ -384,6 +391,9 @@ void HeadTracking() {
        error( const_cast<char *>( "ERROR on binding" ) );
      listen(sockfd,5);
      clilen = sizeof(cli_addr);
+     
+     //Open UART
+     USB_uart_setup();
   
      //--- infinite wait on a connection ---
      while ( 1 ) {
@@ -437,6 +447,29 @@ int getData( int sockfd ) {
   memcpy(&pitch,&b2,sizeof(pitch));
   memcpy(&roll,&b3,sizeof(roll));
   printf( "ypr = %.2f\t\t%.2f\t\t%.2f\n", yaw,pitch,roll );
+  
+  yaw = -yaw + 90;
+  if(yaw<0)
+  	yaw = 0;
+  if(yaw>180)
+  	yaw = 180;
+  	
+  pitch = pitch + 90;
+  if(pitch<0)
+  	pitch = 0;
+  if(pitch>180)
+  	pitch = 180;
+
+  roll = roll + 90;
+  if(roll<0)
+  	roll = 0;
+  if(roll>180)
+  	roll = 180;
+  	
+  ypr_cmd[3] = (unsigned char)(yaw);
+  ypr_cmd[4] = (unsigned char)(pitch);
+  ypr_cmd[5] = (unsigned char)(roll);
+  write( USB_uart, ypr_cmd, sizeof(ypr_cmd));
   return 0;
 }
 
@@ -497,3 +530,120 @@ void test_dual_cameras(){
         }
 }
 
+void USB_uart_setup(){
+	/* Open File Descriptor */
+	//int USB = open( "/dev/ttyUSB0", O_RDWR| O_NONBLOCK | O_NDELAY );
+	USB_uart = open( "/dev/ttyUSB0", O_RDWR| O_NOCTTY );
+	
+	/* Error Handling */
+	if ( USB_uart < 0 )
+	{
+		cout << "Error " << errno << " opening " << "/dev/ttyUSB0" << ": " << strerror (errno) << endl;
+	}
+	
+	/* *** Configure Port *** */
+	struct termios tty;
+	struct termios tty_old;
+	memset (&tty, 0, sizeof tty);
+	
+	/* Error Handling */
+	if ( tcgetattr ( USB_uart, &tty ) != 0 ) {
+	   std::cout << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
+	}
+	
+	/* Save old tty parameters */
+	tty_old = tty;
+	
+	
+	
+		/* Set Baud Rate */
+	cfsetospeed (&tty, (speed_t)B115200);
+	cfsetispeed (&tty, (speed_t)B115200);
+	
+	/* Setting other Port Stuff */
+	tty.c_cflag     &=  ~PARENB;            // Make 8n1
+	tty.c_cflag     &=  ~CSTOPB;
+	tty.c_cflag     &=  ~CSIZE;
+	tty.c_cflag     |=  CS8;
+	
+	tty.c_cflag     &=  ~CRTSCTS;           // no flow control
+	tty.c_cc[VMIN]   =  1;                  // read doesn't block
+	tty.c_cc[VTIME]  =  5;                  // 0.5 seconds read timeout
+	tty.c_cflag     |=  CREAD | CLOCAL;     // turn on READ & ignore ctrl lines
+		
+		
+	/* Make raw */
+	cfmakeraw(&tty);
+	
+	/* Flush Port, then applies attributes */
+	tcflush( USB_uart, TCIFLUSH );
+	if ( tcsetattr ( USB_uart, TCSANOW, &tty ) != 0) {
+	   std::cout << "Error " << errno << " from tcsetattr" << std::endl;
+	}
+		
+	ypr_cmd[0] = 'Y';
+	ypr_cmd[1] = 'P';
+	ypr_cmd[2] = 'R';
+	ypr_cmd[3] = 0;
+	ypr_cmd[4] = 0;
+	ypr_cmd[5] = 0;
+}
+
+void test_uart(){
+	USB_uart_setup();
+	int sd = 1;
+	while(1){
+		ypr_cmd[3] = ypr_cmd[3] + sd;
+		if(ypr_cmd[3]>180){
+			ypr_cmd[3] = 180;
+			sd = -sd;
+		}
+		if(ypr_cmd[3]<1){
+			ypr_cmd[3] = 1;
+			sd = -sd;
+		}
+		int n_written = write( USB_uart, ypr_cmd, sizeof(ypr_cmd));
+		cout<<endl<<n_written;
+		usleep(250000);
+	}
+	
+	/*
+	unsigned char cmd[] = "INIT \r";
+	int n_written = 0,
+	    spot = 0;
+	
+	do {
+	    n_written = write( USB, &cmd[spot], 1 );
+	    spot += n_written;
+	} while (cmd[spot-1] != '\r' && n_written > 0);
+	*/
+		
+	//int n_written = write( USB, cmd, sizeof(cmd) -1)
+	
+	
+	int n = 0,
+	    spot = 0;
+	char buf = '\0';
+	
+	/* Whole response*/
+	char response[1024];
+	memset(response, '\0', sizeof response);
+	
+	do {
+	    n = read( USB_uart, &buf, 1 );
+	    sprintf( &response[spot], "%c", buf );
+	    spot += n;
+	} while( buf != '\r' && n > 0);
+	
+	if (n < 0) {
+	    std::cout << "Error reading: " << strerror(errno) << std::endl;
+	}
+	else if (n == 0) {
+	    std::cout << "Read nothing!" << std::endl;
+	}
+	else {
+	    std::cout << "Response: " << response << std::endl;
+	}	
+	
+	close(USB_uart);
+}

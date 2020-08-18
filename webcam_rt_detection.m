@@ -10,7 +10,7 @@ tic
 while(1)
     img = snapshot(cam);
 %     YPred = squeezenet_Nano_predict(img);
-    YPred = squeezenet_svm_Nano_predict(img);
+    YPred = squeezenet_svm_predict(img);
     img_str = '';
     switch(YPred)
         	case 1 

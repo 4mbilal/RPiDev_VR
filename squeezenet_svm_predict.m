@@ -18,6 +18,9 @@ featuresTest = activations(net,img,layer,'OutputAs','channels');
 featuresTest = featuresTest(:);
 featuresTest = reshape(featuresTest,1000,[])';
 [out,score] = predict(v.classifier,featuresTest);
+% if(score<-0.1)
+%     out = 7;
+% end
 % score(out)
 
 end
