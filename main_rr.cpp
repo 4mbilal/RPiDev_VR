@@ -64,9 +64,9 @@ unsigned char ypr_cmd[6];
 
 
 int main(){
-	Remote_Reality();
+	//Remote_Reality();
 	//test_uart();
-	//test_AI_detector();
+	test_AI_detector();
 	//test_MJPEG_Streamer();
 	//test_single_camera();
 }
@@ -211,7 +211,8 @@ void AI_detector(){
  }
    Stream_frames_indx = 0;
     
-   unsigned char* ipBuffer = (unsigned char*)calloc(sizeof(unsigned char), Stream_frames[0].rows*Stream_frames[0].cols*3);
+//   unsigned char* ipBuffer = (unsigned char*)calloc(sizeof(unsigned char), Stream_frames[0].rows*Stream_frames[0].cols*3);
+   unsigned char* ipBuffer = (unsigned char*)calloc(sizeof(unsigned char), 154587);//227x227x3
 
    while(cap.isOpened()){
    	//1- Capture Frame
@@ -225,9 +226,10 @@ void AI_detector(){
         ftime(&t_start);
         Mat fr_cnn;
         //resize(Stream_frames[(Stream_frames_indx+1)%4],fr_cnn,Size(640,480));
-        Stream_frames[(Stream_frames_indx+1)%4](Rect(0,0,640,480)).copyTo(fr_cnn);
-        //imshow("AI Frame",fr_cnn);
-        //waitKey(1);
+//        Stream_frames[(Stream_frames_indx+1)%4](Rect(0,0,640,480)).copyTo(fr_cnn);
+        Stream_frames[(Stream_frames_indx+1)%4](Rect(206,126,227,227)).copyTo(fr_cnn);
+        imshow("AI Frame",fr_cnn);
+        waitKey(1);
         Mat2Buffer(ipBuffer, fr_cnn);
         res = squeezenet_svm_predict(ipBuffer);
         Stream_frame_status = true;
@@ -258,12 +260,18 @@ void AI_detector(){
 }
 
 void Mat2Buffer(unsigned char* inputBuffer, Mat inImage) {
-    for (int j = 0; j < inImage.rows * inImage.cols; j++) {
-        // BGR to RGB
-        inputBuffer[2 * inImage.rows * inImage.cols + j] = (inImage.data[j * 3 + 0]);
-        inputBuffer[1 * inImage.rows * inImage.cols + j] = (inImage.data[j * 3 + 1]);
-        inputBuffer[0 * inImage.rows * inImage.cols + j] = (inImage.data[j * 3 + 2]);
-    }
+	//This function converts OpenCV style mat to Matlab style array (column-wise with separate non-interleaved channels)
+    //transpose and re-order color channels in the input image
+    for (int chnl=0; chnl < 3; chnl++) {
+      for (int col=0; col < 227; col++) {
+        for (int row=0; row < 227; row++) {
+	        inputBuffer[227*227*2+col*227+row] = inImage.data[row*227*3+col*3+0];//Red
+	        inputBuffer[227*227*1+col*227+row] = inImage.data[row*227*3+col*3+1];//Green
+	        inputBuffer[227*227*0+col*227+row] = inImage.data[row*227*3+col*3+2];//Blue
+        }//end of width
+      }//end of height
+    }//end of channels
+    
 }
 
 void Buffer2Mat(unsigned char* outputBuffer, Mat outImage) {
@@ -286,21 +294,27 @@ int test_AI_detector() {
 
     Mat im;
     VideoCapture cap_cam;
+//    if (!cap_cam.open("/home/pi/Videos/vid2.avi"))
     if (!cap_cam.open(0))
     {
         printf("Camera could not be opened !!!\n");
         exit(-1);
     }
+    //cap_cam.set(cv::CAP_PROP_FRAME_WIDTH,1280);
+		//cap_cam.set(cv::CAP_PROP_FRAME_HEIGHT,480);
+			    
     cap_cam >> im;
-    unsigned char* ipBuffer = (unsigned char*)calloc(sizeof(unsigned char), im.rows*im.cols*3);
-    unsigned char* opBuffer = (unsigned char*)calloc(sizeof(unsigned char), im.rows*im.cols);
+    unsigned char* ipBuffer = (unsigned char*)calloc(sizeof(unsigned char), 154587);
+    //unsigned char* opBuffer = (unsigned char*)calloc(sizeof(unsigned char), im.rows*im.cols);
      
    	ftime(&t_start);
     float fps = 8.5;		
     float res = 0;
+    Mat fr_cnn;
     while(1){
         cap_cam >> im;
-        Mat2Buffer(ipBuffer, im);
+        im(Rect(206,126,227,227)).copyTo(fr_cnn);
+        Mat2Buffer(ipBuffer, fr_cnn);
         res = squeezenet_svm_predict(ipBuffer);
         /*colortest(ipBuffer,opBuffer);
         Buffer2Mat(opBuffer,im);*/
@@ -324,12 +338,12 @@ int test_AI_detector() {
         	case 7: sprintf(img_str,", %0.1f",fps);
         					break;        		
         }
-        putText(im,img_str,Point(20,20),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
-        imshow("Output",im);
+        putText(fr_cnn,img_str,Point(20,20),cv::FONT_HERSHEY_DUPLEX,1.0,CV_RGB(118, 185, 0),2);
+        imshow("Output",fr_cnn);
         waitKey(1);
     }
     free(ipBuffer);
-    free(opBuffer);
+    //free(opBuffer);
     return 0;
 }
 
@@ -446,7 +460,7 @@ int getData( int sockfd ) {
   memcpy(&yaw,&b1,sizeof(yaw));
   memcpy(&pitch,&b2,sizeof(pitch));
   memcpy(&roll,&b3,sizeof(roll));
-  printf( "ypr = %.2f\t\t%.2f\t\t%.2f\n", yaw,pitch,roll );
+//  printf( "ypr = %.2f\t\t%.2f\t\t%.2f\n", yaw,pitch,roll );
   
   yaw = -yaw + 90;
   if(yaw<0)
@@ -460,7 +474,7 @@ int getData( int sockfd ) {
   if(pitch>180)
   	pitch = 180;
 
-  roll = roll + 90;
+  roll = -roll + 90;
   if(roll<0)
   	roll = 0;
   if(roll>180)
@@ -470,6 +484,7 @@ int getData( int sockfd ) {
   ypr_cmd[4] = (unsigned char)(pitch);
   ypr_cmd[5] = (unsigned char)(roll);
   write( USB_uart, ypr_cmd, sizeof(ypr_cmd));
+  printf( "ypr = %d\t\t%d\t\t%d\n", ypr_cmd[3],ypr_cmd[4],ypr_cmd[5] );  
   return 0;
 }
 

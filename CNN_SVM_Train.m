@@ -4,11 +4,11 @@ clc
 
 % |imageDatastore| automatically labels the images based on folder names and stores the data as an |ImageDatastore| 
 % object. An image datastore lets you store large image data, including data that 
-% does not fit in memory. Split the data into 70% training and 30% test data.
+% does not fit in memory. Split the data into 80% training and 20% test data.
 
-dataset_path = 'D:\RnD\Frameworks\Matlab\ML\CNN\AI_NEOM\dataset';
+dataset_path = 'D:\RnD\Frameworks\Dataset\NEOMchallenge\dataset';
 imds = imageDatastore(dataset_path,'IncludeSubfolders',true,'LabelSource','foldernames');
-[imdsTrain,imdsTest] = splitEachLabel(imds,0.7,'randomized');
+[imdsTrain,imdsTest] = splitEachLabel(imds,0.8,'randomized');
 
 %Display some sample images.
 
@@ -80,6 +80,7 @@ YTest = grp2idx(imdsTest.Labels);
 % and Machine Learning Toolbox).
 
 classifier = fitcecoc(featuresTrain,YTrain);
+
 % Classify Test Images
 % Classify the test images using the trained SVM model using the features extracted 
 % from the test images.
