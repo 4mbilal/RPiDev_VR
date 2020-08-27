@@ -1,8 +1,8 @@
 function out = squeezenet_svm_predict(img)%#codegen
 coder.inline('never');  %keep this function definition separate and not merge with the calling function 
-opencv_linkflags = '`pkg-config --cflags --libs opencv` -lpthread';
+opencv_linkflags = '`pkg-config --cflags --libs opencv4` -lpthread';
 coder.updateBuildInfo('addLinkFlags',opencv_linkflags);
-opencv_compileflags = '`pkg-config --cflags --libs opencv` -lpthread';
+opencv_compileflags = '`pkg-config --cflags --libs opencv4` -lpthread';
 coder.updateBuildInfo('addCompileFlags',opencv_compileflags);
 
 persistent net;

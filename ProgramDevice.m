@@ -7,11 +7,11 @@ clc
 % To compile natively on Nano use the following command. This command appears when Matlab gives an error due to some reason while compiling
 % touch -c /home/brainiac/MatlabDev/MATLAB_ws/R2020a/D/RnD/Frameworks/Matlab/ML/CNN/Example04_JetsonNano_Squeezenet/codegen/exe/squeezenet_svm_Nano_predict/*.*;make  -f squeezenet_svm_Nano_predict_rtw.mk all MATLAB_WORKSPACE="/home/brainiac/MatlabDev/MATLAB_ws/R2020a" -C /home/brainiac/MatlabDev/MATLAB_ws/R2020a/D/RnD/Frameworks/Matlab/ML/CNN/Example04_JetsonNano_Squeezenet/codegen/exe/squeezenet_svm_Nano_predict
 
-% device = 0;     %Change to opencv4 in squeezenet_svm_predict
-device = 1;     %Change to opencv in squeezenet_svm_predict
+device = 0;     %Change to opencv4 in squeezenet_svm_predict
+% device = 1;     %Change to opencv in squeezenet_svm_predict
 
 if(device ==0)
-    hwobj = jetson('192.168.137.103','brainiac','123');
+    hwobj = jetson('192.168.0.167','brainiac','123');
 %     hwobj.getCameraList
     cfg = coder.gpuConfig('exe');
 %     cfg = coder.gpuConfig('lib');
