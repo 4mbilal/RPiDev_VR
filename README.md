@@ -2,7 +2,8 @@
 Let's a person "remotely visit" a place using VR goggles. The host uses the headtracking signals to move a servo-mounted stereo camera accordingly. The CNN-SVM detector detects the custom objects in view and plays a picture-in-picture informative video.  
 1- Streams stereo video to Android-based VR goggles and receives headtracking signals to actuate the servos.  
 2- Detects custom objects using Squeezenet-SVM detector. See Matlab script.  
-3- Tested on both Raspbery Pi and Jetson Nano. Raspberry struggles while Jetson comfortably works at >10fps.  
+3- Tested on both Raspbery Pi and Jetson Nano. Raspberry struggles while Jetson comfortably works at >10fps.
+4- The associated VR Goggle App code can be found here https://github.com/4mbilal/RemoteRealityGoggles
 
 ## *Acknowledgements*:  
 
